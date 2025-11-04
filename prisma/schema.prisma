@@ -1,0 +1,288 @@
+// Prisma Schema para Sistema de Cuadres
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// MODELO: Transacciones del Sistema Fusion
+// ==========================================
+model FusionTransaction {
+  id              String   @id @default(cuid())
+  fecha           DateTime
+  idTurnoFusion   Int
+  numeroTurno     Int
+  bomba           Int
+  manguera        Int
+  combustible     String
+  modoServicio    String   // 'FULL' o 'SELF'
+  volumen         Decimal  @db.Decimal(10, 3)
+  total           Decimal  @db.Decimal(10, 2)
+  precioUnitario  Decimal  @db.Decimal(10, 3)
+  tipoPago        String
+  hora            String
+  correlativo     String
+  estado          String
+  createdAt       DateTime @default(now())
+
+  @@index([fecha])
+  @@index([numeroTurno])
+  @@index([idTurnoFusion])
+  @@map("fusion_transactions")
+}
+
+// ==========================================
+// MODELO: Cuadres de Estación
+// ==========================================
+model CuadreEstacion {
+  id             String   @id @default(cuid())
+  fecha          DateTime
+  turno          Int      // 1, 2, 3, 4
+  horarioInicio  String
+  horarioFin     String
+  
+  // Conceptos de entrada
+  depositos      Decimal  @default(0) @db.Decimal(10, 2)
+  remanente      Decimal  @default(0) @db.Decimal(10, 2)
+  visanet        Decimal  @default(0) @db.Decimal(10, 2)
+  credomatic     Decimal  @default(0) @db.Decimal(10, 2)
+  bacFlota       Decimal  @default(0) @db.Decimal(10, 2)
+  versatec       Decimal  @default(0) @db.Decimal(10, 2)
+  flotaUno       Decimal  @default(0) @db.Decimal(10, 2)
+  cupones        Decimal  @default(0) @db.Decimal(10, 2)
+  valesPrepago   Decimal  @default(0) @db.Decimal(10, 2)
+  valesDiarios   Decimal  @default(0) @db.Decimal(10, 2)
+  anticipos      Decimal  @default(0) @db.Decimal(10, 2)
+  faltantes      Decimal  @default(0) @db.Decimal(10, 2)
+  
+  // Totales
+  totalManual    Decimal  @default(0) @db.Decimal(10, 2)
+  totalSistema   Decimal  @default(0) @db.Decimal(10, 2)
+  diferencia     Decimal  @default(0) @db.Decimal(10, 2)
+  
+  // Metadata
+  usuario        String
+  observaciones  String?
+  cerrado        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([fecha, turno])
+  @@index([fecha])
+  @@map("cuadres_estacion")
+}
+
+// ==========================================
+// MODELO: Cuadres de Tienda
+// ==========================================
+model CuadreTienda {
+  id             String   @id @default(cuid())
+  fecha          DateTime
+  turno          String   // 'NOCHE' o 'DIA'
+  horarioInicio  String
+  horarioFin     String
+  
+  // Conceptos de entrada
+  depositos      Decimal  @default(0) @db.Decimal(10, 2)
+  remanente      Decimal  @default(0) @db.Decimal(10, 2)
+  visanet        Decimal  @default(0) @db.Decimal(10, 2)
+  credomatic     Decimal  @default(0) @db.Decimal(10, 2)
+  cheques        Decimal  @default(0) @db.Decimal(10, 2)
+  cupones        Decimal  @default(0) @db.Decimal(10, 2)
+  versatec       Decimal  @default(0) @db.Decimal(10, 2)
+  cajaChica      Decimal  @default(0) @db.Decimal(10, 2)
+  ventasHugoApp  Decimal  @default(0) @db.Decimal(10, 2)
+  pedidosYa      Decimal  @default(0) @db.Decimal(10, 2)
+  uberEats       Decimal  @default(0) @db.Decimal(10, 2)
+  promociones    Decimal  @default(0) @db.Decimal(10, 2)
+  faltantes      Decimal  @default(0) @db.Decimal(10, 2)
+  anticipos      Decimal  @default(0) @db.Decimal(10, 2)
+  
+  // Totales
+  totalManual    Decimal  @default(0) @db.Decimal(10, 2)
+  totalSistema   Decimal  @default(0) @db.Decimal(10, 2)
+  diferencia     Decimal  @default(0) @db.Decimal(10, 2)
+  
+  // Metadata
+  usuario        String
+  observaciones  String?
+  cerrado        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([fecha, turno])
+  @@index([fecha])
+  @@map("cuadres_tienda")
+}
+
+// ==========================================
+// MODELO: Depósitos Bancarios
+// ==========================================
+model DepositoBancario {
+  id              String   @id @default(cuid())
+  fecha           DateTime
+  numeroBoleta    String
+  tipo            String   // 'ESTACION_T1T2', 'ESTACION_T3T4', 'TIENDA_NOCHE', 'TIENDA_DIA'
+  turnosIncluidos String   // Ej: "T1+T2", "Noche"
+  montoEfectivo   Decimal  @db.Decimal(10, 2)
+  fechaDeposito   DateTime
+  observaciones   String?
+  usuario         String
+  createdAt       DateTime @default(now())
+
+  @@index([fecha])
+  @@map("depositos_bancarios")
+}
+
+// ==========================================
+// MODELO: Ajustes Manuales (Auditoría)
+// ==========================================
+model AjusteManual {
+  id          String   @id @default(cuid())
+  fecha       DateTime
+  tipo        String   // 'ESTACION' o 'TIENDA'
+  turno       String
+  concepto    String
+  montoAntes  Decimal  @db.Decimal(10, 2)
+  montoDespues Decimal @db.Decimal(10, 2)
+  razon       String
+  usuario     String
+  createdAt   DateTime @default(now())
+
+  @@index([fecha])
+  @@map("ajustes_manuales")
+}
+
+// ==========================================
+// MODELO: Consolidado Diario
+// ==========================================
+model ConsolidadoDiario {
+  id                String   @id @default(cuid())
+  fecha             DateTime @unique
+  totalEstacion     Decimal  @db.Decimal(10, 2)
+  totalTienda       Decimal  @db.Decimal(10, 2)
+  totalGeneral      Decimal  @db.Decimal(10, 2)
+  diferenciaEstacion Decimal @db.Decimal(10, 2)
+  diferenciaTienda  Decimal  @db.Decimal(10, 2)
+  usuario           String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  conceptos ConsolidadoConcepto[]
+
+  @@index([fecha])
+  @@map("consolidados_diarios")
+}
+
+model ConsolidadoConcepto {
+  id            String   @id @default(cuid())
+  consolidadoId String
+  consolidado   ConsolidadoDiario @relation(fields: [consolidadoId], references: [id], onDelete: Cascade)
+  concepto      String
+  montoEstacion Decimal  @db.Decimal(10, 2)
+  montoTienda   Decimal  @db.Decimal(10, 2)
+  montoTotal    Decimal  @db.Decimal(10, 2)
+
+  @@index([consolidadoId])
+  @@map("consolidados_conceptos")
+}
+
+// ==========================================
+// MODELO: Caja Chica
+// ==========================================
+model CajaChica {
+  id          String   @id @default(cuid())
+  fecha       DateTime
+  concepto    String
+  monto       Decimal  @db.Decimal(10, 2)
+  responsable String
+  comprobante String?
+  observaciones String?
+  usuario     String
+  createdAt   DateTime @default(now())
+
+  @@index([fecha])
+  @@map("cajas_chicas")
+}
+
+// ==========================================
+// MODELO: Faltantes de Empleados
+// ==========================================
+model FaltanteEmpleado {
+  id          String   @id @default(cuid())
+  fecha       DateTime
+  empleado    String
+  monto       Decimal  @db.Decimal(10, 2)
+  concepto    String
+  turno       String
+  pagado      Boolean  @default(false)
+  fechaPago   DateTime?
+  montoPagado Decimal? @db.Decimal(10, 2)
+  observaciones String?
+  usuario     String
+  createdAt   DateTime @default(now())
+
+  @@index([fecha])
+  @@index([empleado])
+  @@map("faltantes_empleados")
+}
+
+// ==========================================
+// MODELO: Préstamos a Empleados
+// ==========================================
+model PrestamoEmpleado {
+  id            String   @id @default(cuid())
+  empleado      String
+  montoTotal    Decimal  @db.Decimal(10, 2)
+  saldoPendiente Decimal @db.Decimal(10, 2)
+  fechaPrestamo DateTime
+  motivo        String?
+  cuotas        Int      @default(1)
+  cuotasPagadas Int      @default(0)
+  activo        Boolean  @default(true)
+  usuario       String
+  createdAt     DateTime @default(now())
+
+  pagos PagoPrestamo[]
+
+  @@index([empleado])
+  @@map("prestamos_empleados")
+}
+
+model PagoPrestamo {
+  id         String   @id @default(cuid())
+  prestamoId String
+  prestamo   PrestamoEmpleado @relation(fields: [prestamoId], references: [id], onDelete: Cascade)
+  monto      Decimal  @db.Decimal(10, 2)
+  fechaPago  DateTime
+  numeroCuota Int
+  observaciones String?
+  usuario    String
+  createdAt  DateTime @default(now())
+
+  @@index([prestamoId])
+  @@map("pagos_prestamos")
+}
+
+// ==========================================
+// MODELO: Documentos y Archivos
+// ==========================================
+model Documento {
+  id          String   @id @default(cuid())
+  fecha       DateTime
+  tipo        String   // 'POS_CIERRE', 'BOLETA', 'FACTURA', 'COMPROBANTE'
+  nombre      String
+  url         String
+  turno       String?
+  concepto    String?
+  usuario     String
+  createdAt   DateTime @default(now())
+
+  @@index([fecha])
+  @@index([tipo])
+  @@map("documentos")
+}
